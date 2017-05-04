@@ -1,15 +1,17 @@
 from datetime import datetime
 
-from elasticsearch_dsl import DocType, Nested, Text, Date, Object, Boolean, Integer
-from elasticsearch_dsl.field import InnerObjectWrapper
-from elasticsearch_dsl.exceptions import ValidationException
-
 from pytest import raises
+
+from elasticsearch_dsl import Boolean, Date, DocType, Integer, Nested, Object, Text
+from elasticsearch_dsl.exceptions import ValidationException
+from elasticsearch_dsl.field import InnerObjectWrapper
+
 
 class Author(InnerObjectWrapper):
     def clean(self):
         if self.name.lower() not in self.email:
             raise ValidationException('Invalid email!')
+
 
 class BlogPost(DocType):
     authors = Nested(
@@ -34,9 +36,11 @@ class AutoNowDate(Date):
             data = datetime.now()
         return super(AutoNowDate, self).clean(data)
 
+
 class Log(DocType):
     timestamp = AutoNowDate(required=True)
     data = Text()
+
 
 def test_required_int_can_be_0():
     class DT(DocType):
@@ -45,6 +49,7 @@ def test_required_int_can_be_0():
     dt = DT(i=0)
     assert dt.full_clean() is None
 
+
 def test_required_field_cannot_be_empty_list():
     class DT(DocType):
         i = Integer(required=True)
@@ -52,6 +57,7 @@ def test_required_field_cannot_be_empty_list():
     dt = DT(i=[])
     with raises(ValidationException):
         dt.full_clean()
+
 
 def test_validation_works_for_lists_of_values():
     class DT(DocType):
@@ -70,11 +76,13 @@ def test_field_with_custom_clean():
 
     assert isinstance(l.timestamp, datetime)
 
+
 def test_empty_object():
     d = BlogPost(authors=[{'name': 'Honza', 'email': 'honza@elastic.co'}])
     d.inner = {}
 
     d.full_clean()
+
 
 def test_missing_required_field_raises_validation_exception():
     d = BlogPost()
@@ -89,6 +97,7 @@ def test_missing_required_field_raises_validation_exception():
     d = BlogPost()
     d.authors.append({'name': 'Honza', 'email': 'honza@elastic.co'})
     d.full_clean()
+
 
 def test_boolean_doesnt_treat_false_as_empty():
     d = BlogPostWithStatus()
@@ -108,6 +117,7 @@ def test_custom_validation_on_nested_gets_run():
     with raises(ValidationException):
         d.full_clean()
 
+
 def test_accessing_known_fields_returns_empty_value():
     d = BlogPost()
 
@@ -116,6 +126,7 @@ def test_accessing_known_fields_returns_empty_value():
     d.authors.append({})
     assert None is d.authors[0].name
     assert None is d.authors[0].email
+
 
 def test_empty_values_are_not_serialized():
     d = BlogPost(authors=[{'name': 'Honza', 'email': 'honza@elastic.co'}], created=None)

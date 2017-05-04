@@ -1,14 +1,15 @@
 from six import string_types
 
 from elasticsearch import Elasticsearch
-
 from .serializer import serializer
+
 
 class Connections(object):
     """
     Class responsible for holding connections to different clusters. Used as a
     singleton in this module.
     """
+
     def __init__(self):
         self._kwargs = {}
         self._conns = {}
@@ -92,5 +93,6 @@ class Connections(object):
         except KeyError:
             # no connection and no kwargs to set one up
             raise KeyError('There is no connection with alias %r.' % alias)
+
 
 connections = Connections()

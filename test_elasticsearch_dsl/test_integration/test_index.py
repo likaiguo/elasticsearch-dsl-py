@@ -1,17 +1,20 @@
-from elasticsearch_dsl import DocType, Index, Text, Keyword, Date, analysis
+from elasticsearch_dsl import Date, DocType, Index, Keyword, Text, analysis
+
 
 class Post(DocType):
     title = Text(analyzer=analysis.analyzer('my_analyzer', tokenizer='keyword'))
     published_from = Date()
 
+
 class User(DocType):
     username = Keyword()
     joined_date = Date()
 
-def test_index_exists(write_client):
 
+def test_index_exists(write_client):
     assert Index('git').exists()
     assert not Index('not-there').exists()
+
 
 def test_index_can_be_created_with_settings_and_mappings(write_client):
     i = Index('test-blog', using=write_client)
@@ -21,23 +24,23 @@ def test_index_can_be_created_with_settings_and_mappings(write_client):
     i.create()
 
     assert {
-        'test-blog': {
-            'mappings': {
-                'post': {
-                    'properties': {
-                        'title': {'type': 'text', 'analyzer': 'my_analyzer'},
-                        'published_from': {'type': 'date'}
-                    }
-                },
-                'user': {
-                    'properties': {
-                        'username': {'type': 'keyword'},
-                        'joined_date': {'type': 'date'}
-                    }
-                },
-            }
-        }
-    } == write_client.indices.get_mapping(index='test-blog')
+               'test-blog': {
+                   'mappings': {
+                       'post': {
+                           'properties': {
+                               'title': {'type': 'text', 'analyzer': 'my_analyzer'},
+                               'published_from': {'type': 'date'}
+                           }
+                       },
+                       'user': {
+                           'properties': {
+                               'username': {'type': 'keyword'},
+                               'joined_date': {'type': 'date'}
+                           }
+                       },
+                   }
+               }
+           } == write_client.indices.get_mapping(index='test-blog')
 
     settings = write_client.indices.get_settings(index='test-blog')
     assert settings['test-blog']['settings']['index']['number_of_replicas'] == '0'
@@ -51,6 +54,7 @@ def test_index_can_be_created_with_settings_and_mappings(write_client):
         }
     }
 
+
 def test_delete(write_client):
     write_client.indices.create(
         index='test-index',
@@ -60,6 +64,7 @@ def test_delete(write_client):
     i = Index('test-index', using=write_client)
     i.delete()
     assert not write_client.indices.exists(index='test-index')
+
 
 def test_multiple_indices_with_same_doc_type_work(write_client):
     i1 = Index('test-index-1', using=write_client)

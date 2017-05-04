@@ -1,10 +1,11 @@
+from .hit import Hit, HitMeta
 from ..utils import AttrDict, AttrList
 
-from .hit import Hit, HitMeta
 
 class SuggestResponse(AttrDict):
     def success(self):
         return not self._shards.failed
+
 
 class Response(AttrDict):
     def __init__(self, search, response):
@@ -22,6 +23,7 @@ class Response(AttrDict):
 
     def __nonzero__(self):
         return bool(self.hits)
+
     __bool__ = __nonzero__
 
     def __repr__(self):
@@ -78,6 +80,7 @@ class Response(AttrDict):
             super(AttrDict, self).__setattr__('_aggs', aggs)
         return self._aggs
 
+
 class AggResponse(AttrDict):
     def __init__(self, aggs, search, data):
         super(AttrDict, self).__setattr__('_meta', {'search': search, 'aggs': aggs})
@@ -93,4 +96,3 @@ class AggResponse(AttrDict):
     def __iter__(self):
         for name in self._meta['aggs']:
             yield self[name]
-

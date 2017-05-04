@@ -1,7 +1,8 @@
 import collections
 
+from .response.aggs import AggResponse, BucketData, TopHitsData
 from .utils import DslBase
-from .response.aggs import BucketData, AggResponse, TopHitsData
+
 
 def A(name_or_agg, filter=None, **params):
     if filter is not None:
@@ -20,7 +21,7 @@ def A(name_or_agg, filter=None, **params):
         # should be {"terms": {"field": "tags"}}
         if len(agg) != 1:
             raise ValueError('A() can only accept dict with an aggregation ({"terms": {...}}). '
-                 'Instead it got (%r)' % name_or_agg)
+                             'Instead it got (%r)' % name_or_agg)
         agg_type, params = agg.popitem()
         if aggs:
             params = params.copy()
@@ -35,6 +36,7 @@ def A(name_or_agg, filter=None, **params):
 
     # "terms", field="tags"
     return Agg.get_dsl_class(name_or_agg)(**params)
+
 
 class Agg(DslBase):
     _type_name = 'agg'
@@ -58,11 +60,12 @@ class AggBase(object):
     _param_defs = {
         'aggs': {'type': 'agg', 'hash': True},
     }
+
     def __contains__(self, key):
         return key in self._params.get('aggs', {})
 
     def __getitem__(self, agg_name):
-        agg = self._params.setdefault('aggs', {})[agg_name] # propagate KeyError
+        agg = self._params.setdefault('aggs', {})[agg_name]  # propagate KeyError
 
         # make sure we're not mutating a shared state - whenever accessing a
         # bucket, return a shallow copy of it to be safe
@@ -114,6 +117,7 @@ class Bucket(AggBase, Agg):
             d['aggs'] = d[self.name].pop('aggs')
         return d
 
+
 class Filter(Bucket):
     name = 'filter'
     _param_defs = {
@@ -131,8 +135,10 @@ class Filter(Bucket):
         d[self.name].update(d[self.name].pop('filter', {}))
         return d
 
+
 class Pipeline(Agg):
     pass
+
 
 # bucket aggregations
 class Filters(Bucket):
@@ -142,53 +148,70 @@ class Filters(Bucket):
         'aggs': {'type': 'agg', 'hash': True},
     }
 
+
 class Children(Bucket):
     name = 'children'
+
 
 class DateHistogram(Bucket):
     name = 'date_histogram'
 
+
 class DateRange(Bucket):
     name = 'date_range'
+
 
 class GeoDistance(Bucket):
     name = 'geo_distance'
 
+
 class GeohashGrid(Bucket):
     name = 'geohash_grid'
+
 
 class GeoCentroid(Bucket):
     name = 'geo_centroid'
 
+
 class Global(Bucket):
     name = 'global'
+
 
 class Histogram(Bucket):
     name = 'histogram'
 
+
 class Iprange(Bucket):
     name = 'iprange'
+
 
 class Missing(Bucket):
     name = 'missing'
 
+
 class Nested(Bucket):
     name = 'nested'
+
 
 class Range(Bucket):
     name = 'range'
 
+
 class ReverseNested(Bucket):
     name = 'reverse_nested'
+
 
 class SignificantTerms(Bucket):
     name = 'significant_terms'
 
+
 class Terms(Bucket):
     name = 'terms'
 
+
 class Sampler(Bucket):
     name = 'sampler'
+
 
 # metric aggregations
 class TopHits(Agg):
@@ -197,78 +220,103 @@ class TopHits(Agg):
     def result(self, search, data):
         return TopHitsData(self, search, data)
 
+
 class Avg(Agg):
     name = 'avg'
+
 
 class Cardinality(Agg):
     name = 'cardinality'
 
+
 class ExtendedStats(Agg):
     name = 'extended_stats'
+
 
 class GeoBounds(Agg):
     name = 'geo_bounds'
 
+
 class Max(Agg):
     name = 'max'
+
 
 class Min(Agg):
     name = 'min'
 
+
 class Percentiles(Agg):
     name = 'percentiles'
+
 
 class PercentileRanks(Agg):
     name = 'percentile_ranks'
 
+
 class ScriptedMetric(Agg):
     name = 'scripted_metric'
+
 
 class Stats(Agg):
     name = 'stats'
 
+
 class Sum(Agg):
     name = 'sum'
 
+
 class ValueCount(Agg):
     name = 'value_count'
+
 
 # pipeline aggregations
 class AvgBucket(Pipeline):
     name = 'avg_bucket'
 
+
 class BucketScript(Pipeline):
     name = 'bucket_script'
+
 
 class BucketSelector(Pipeline):
     name = 'bucket_selector'
 
+
 class CumulativeSum(Pipeline):
     name = 'cumulative_sum'
+
 
 class Derivative(Pipeline):
     name = 'derivative'
 
+
 class ExtendedStatsBucket(Pipeline):
     name = 'extended_stats_bucket'
+
 
 class MaxBucket(Pipeline):
     name = 'max_bucket'
 
+
 class MinBucket(Pipeline):
     name = 'min_bucket'
+
 
 class MovingAvg(Pipeline):
     name = 'moving_avg'
 
+
 class PercentilesBucket(Pipeline):
     name = 'percentiles_bucket'
+
 
 class SerialDiff(Pipeline):
     name = 'serial_diff'
 
+
 class StatsBucket(Pipeline):
     name = 'stats_bucket'
+
 
 class SumBucket(Pipeline):
     name = 'sum_bucket'

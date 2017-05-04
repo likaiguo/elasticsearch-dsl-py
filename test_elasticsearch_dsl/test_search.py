@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-from elasticsearch_dsl import search, query, Q, DocType, utils
+from elasticsearch_dsl import DocType, Q, query, search, utils
 
 
 def test_execute_uses_cache():
@@ -9,6 +9,7 @@ def test_execute_uses_cache():
     s._response = r
 
     assert r is s.execute()
+
 
 def test_cache_can_be_ignored(mock_client):
     s = search.Search(using='mock')
@@ -22,17 +23,20 @@ def test_cache_can_be_ignored(mock_client):
         body={'query': {'match_all': {}}},
     )
 
+
 def test_iter_iterates_over_hits():
     s = search.Search()
     s._response = [1, 2, 3]
 
     assert [1, 2, 3] == list(s)
 
+
 def test_count_uses_cache():
     s = search.Search()
     s._response = utils.AttrDict({'hits': {'total': 42}})
 
     assert 42 == s.count()
+
 
 def test_cache_isnt_cloned():
     s = search.Search()
@@ -46,6 +50,7 @@ def test_search_starts_with_empty_query():
 
     assert s.query._proxied == query.MatchAll()
 
+
 def test_search_query_combines_query():
     s = search.Search()
 
@@ -57,6 +62,7 @@ def test_search_query_combines_query():
     assert s2.query._proxied == query.Match(f=42)
     assert s3.query._proxied == query.Bool(must=[query.Match(f=42), query.Match(f=43)])
 
+
 def test_query_can_be_assigned_to():
     s = search.Search()
 
@@ -65,19 +71,21 @@ def test_query_can_be_assigned_to():
 
     assert s.query._proxied is q
 
+
 def test_query_can_be_wrapped():
     s = search.Search().query('match', title='python')
 
     s.query = Q('function_score', query=s.query, field_value_factor={'field': 'rating'})
 
     assert {
-        'query': {
-            'function_score': {
-                'functions': [{'field_value_factor': {'field': 'rating'}}],
-                'query': {'match': {'title': 'python'}}
-            }
-        }
-    }== s.to_dict()
+               'query': {
+                   'function_score': {
+                       'functions': [{'field_value_factor': {'field': 'rating'}}],
+                       'query': {'match': {'title': 'python'}}
+                   }
+               }
+           } == s.to_dict()
+
 
 def test_using():
     o = object()
@@ -88,15 +96,18 @@ def test_using():
     assert s._using is o
     assert s2._using is o2
 
+
 def test_methods_are_proxied_to_the_query():
     s = search.Search()
 
     assert s.query.to_dict() == {'match_all': {}}
 
+
 def test_query_always_returns_search():
     s = search.Search()
 
     assert isinstance(s.query('match', f=42), search.Search)
+
 
 def test_source_copied_on_clone():
     s = search.Search().source(False)
@@ -110,6 +121,7 @@ def test_source_copied_on_clone():
     s3 = search.Search().source(["some", "fields"])
     assert s3._clone()._source == s3._source
     assert s3._clone()._source == ["some", "fields"]
+
 
 def test_aggs_get_copied_on_change():
     s = search.Search()
@@ -128,7 +140,7 @@ def test_aggs_get_copied_on_change():
             'per_tag': {
                 'terms': {'field': 'f'},
                 'aggs': {'max_score': {'max': {'field': 'score'}}}
-             }
+            }
         }
     }
 
@@ -139,6 +151,7 @@ def test_aggs_get_copied_on_change():
     assert d == s3.to_dict()
     d['aggs']['max_score'] = {"max": {"field": 'score'}}
     assert d == s4.to_dict()
+
 
 def test_search_index():
     s = search.Search(index='i')
@@ -157,6 +170,7 @@ def test_search_index():
     s2 = s.index('i3')
     assert s._index == ['i', 'i2']
     assert s2._index == ['i', 'i2', 'i3']
+
 
 def test_search_doc_type():
     s = search.Search(doc_type='i')
@@ -201,6 +215,7 @@ def test_sort():
     assert [] == s._sort
     assert search.Search().to_dict() == s.to_dict()
 
+
 def test_slice():
     s = search.Search()
     assert {'query': {'match_all': {}}, 'from': 3, 'size': 7} == s[3:10].to_dict()
@@ -208,9 +223,11 @@ def test_slice():
     assert {'query': {'match_all': {}}, 'from': 3, 'size': 10} == s[3:].to_dict()
     assert {'query': {'match_all': {}}, 'from': 0, 'size': 0} == s[0:0].to_dict()
 
+
 def test_index():
     s = search.Search()
     assert {'query': {'match_all': {}}, 'from': 3, 'size': 1} == s[3].to_dict()
+
 
 def test_search_to_dict():
     s = search.Search()
@@ -227,7 +244,7 @@ def test_search_to_dict():
             'per_tag': {
                 'terms': {'field': 'f'},
                 'aggs': {'max_score': {'max': {'field': 'score'}}}
-             }
+            }
         },
         'query': {'match': {'f': 42}}
     }
@@ -247,7 +264,7 @@ def test_complex_example():
         .post_filter('terms', tags=['prague', 'czech']) \
         .script_fields(more_attendees="doc['attendees'].value + 42")
 
-    s.aggs.bucket('per_country', 'terms', field='country')\
+    s.aggs.bucket('per_country', 'terms', field='country') \
         .metric('avg_attendees', 'avg', field='attendees')
 
     s.query.minimum_should_match = 2
@@ -255,48 +272,49 @@ def test_complex_example():
     s = s.highlight_options(order='score').highlight('title', 'body', fragment_size=50)
 
     assert {
-        'query': {
-            'bool': {
-                'filter': [
-                    {
-                        'bool': {
-                            'should': [
-                                {'term': {'category': 'meetup'}},
-                                {'term': {'category': 'conference'}}
-                            ]
-                        }
-                    }
-                ],
-                'must': [ {'match': {'title': 'python'}}],
-                'must_not': [{'match': {'title': 'ruby'}}],
-                'minimum_should_match': 2
-            }
-        },
-        'post_filter': {
-            'terms': {'tags': ['prague', 'czech']}
-        },
-        'aggs': {
-            'per_country': {
-                'terms': {'field': 'country'},
-                'aggs': {
-                    'avg_attendees': {'avg': {'field': 'attendees'}}
-                }
-            }
-        },
-        "highlight": {
-            'order': 'score',
-            'fields': {
-                'title': {'fragment_size': 50},
-                'body': {'fragment_size': 50}
-            }
-        },
-        'script_fields': {
-            'more_attendees': {'script': "doc['attendees'].value + 42"}
-        }
-    } == s.to_dict()
+               'query': {
+                   'bool': {
+                       'filter': [
+                           {
+                               'bool': {
+                                   'should': [
+                                       {'term': {'category': 'meetup'}},
+                                       {'term': {'category': 'conference'}}
+                                   ]
+                               }
+                           }
+                       ],
+                       'must': [{'match': {'title': 'python'}}],
+                       'must_not': [{'match': {'title': 'ruby'}}],
+                       'minimum_should_match': 2
+                   }
+               },
+               'post_filter': {
+                   'terms': {'tags': ['prague', 'czech']}
+               },
+               'aggs': {
+                   'per_country': {
+                       'terms': {'field': 'country'},
+                       'aggs': {
+                           'avg_attendees': {'avg': {'field': 'attendees'}}
+                       }
+                   }
+               },
+               "highlight": {
+                   'order': 'score',
+                   'fields': {
+                       'title': {'fragment_size': 50},
+                       'body': {'fragment_size': 50}
+                   }
+               },
+               'script_fields': {
+                   'more_attendees': {'script': "doc['attendees'].value + 42"}
+               }
+           } == s.to_dict()
+
 
 def test_reverse():
-    d =  {
+    d = {
         'query': {
             'filtered': {
                 'filter': {
@@ -309,7 +327,7 @@ def test_reverse():
                 },
                 'query': {
                     'bool': {
-                        'must': [ {'match': {'title': 'python'}}],
+                        'must': [{'match': {'title': 'python'}}],
                         'must_not': [{'match': {'title': 'ruby'}}],
                         'minimum_should_match': 2
                     }
@@ -340,11 +358,11 @@ def test_reverse():
             }
         },
         "suggest": {
-            "my-title-suggestions-1" : {
-                "text" : "devloping distibutd saerch engies",
-                "term" : {
-                    "size" : 3,
-                    "field" : "title"
+            "my-title-suggestions-1": {
+                "text": "devloping distibutd saerch engies",
+                "term": {
+                    "size": 3,
+                    "field": "title"
                 }
             }
         },
@@ -362,13 +380,15 @@ def test_reverse():
     assert {"size": 5} == s._extra
     assert d == s.to_dict()
 
+
 def test_from_dict_doesnt_need_query():
     s = search.Search.from_dict({"size": 5})
 
     assert {
-        "query": {"match_all": {}},
-        "size": 5
-    } == s.to_dict()
+               "query": {"match_all": {}},
+               "size": 5
+           } == s.to_dict()
+
 
 def test_params_being_passed_to_search(mock_client):
     s = search.Search(using='mock')
@@ -382,129 +402,139 @@ def test_params_being_passed_to_search(mock_client):
         routing='42'
     )
 
+
 def test_source():
     assert {
-        'query': {
-            'match_all': {}
-        },
-    } == search.Search().source().to_dict()
+               'query': {
+                   'match_all': {}
+               },
+           } == search.Search().source().to_dict()
 
     assert {
-        '_source': {
-            'include': ['foo.bar.*'],
-            'exclude': ['foo.one']
-        },
-        'query': {
-            'match_all': {}
-        }
-    } == search.Search().source(include=['foo.bar.*'], exclude=['foo.one']).to_dict()
+               '_source': {
+                   'include': ['foo.bar.*'],
+                   'exclude': ['foo.one']
+               },
+               'query': {
+                   'match_all': {}
+               }
+           } == search.Search().source(include=['foo.bar.*'], exclude=['foo.one']).to_dict()
 
     assert {
-        'query': {
-            'match_all': {}
-        },
-        '_source': False
-    } == search.Search().source(False).to_dict()
+               'query': {
+                   'match_all': {}
+               },
+               '_source': False
+           } == search.Search().source(False).to_dict()
 
     assert {
-        'query': {
-            'match_all': {}
-        },
-        '_source': ['f1', 'f2']
-    } == search.Search().source(include=['foo.bar.*'], exclude=['foo.one']).source(['f1', 'f2']).to_dict()
+               'query': {
+                   'match_all': {}
+               },
+               '_source': ['f1', 'f2']
+           } == search.Search().source(include=['foo.bar.*'], exclude=['foo.one']).source(['f1', 'f2']).to_dict()
+
 
 def test_source_on_clone():
     assert {
-        '_source': {
-            'include': ['foo.bar.*'],
-            'exclude': ['foo.one']
-        },
-        'query': {
-            'bool': {
-                'filter': [{'term': {'title': 'python'}}],
-            }
-        }
-    } == search.Search().source(include=['foo.bar.*']).\
-        source(exclude=['foo.one']).\
-        filter('term', title='python').to_dict()\
+               '_source': {
+                   'include': ['foo.bar.*'],
+                   'exclude': ['foo.one']
+               },
+               'query': {
+                   'bool': {
+                       'filter': [{'term': {'title': 'python'}}],
+                   }
+               }
+           } == search.Search().source(include=['foo.bar.*']). \
+               source(exclude=['foo.one']). \
+               filter('term', title='python').to_dict()
 
-    assert {'_source': False,
-            'query': {
-                'bool': {
-                    'filter': [{'term': {'title': 'python'}}],
-                }
-            }} == search.Search().source(
+    assert {
+               '_source': False,
+               'query': {
+                   'bool': {
+                       'filter': [{'term': {'title': 'python'}}],
+                   }
+               }
+           } == search.Search().source(
         False).filter('term', title='python').to_dict()
+
 
 def test_source_on_clear():
     assert {
-        'query': {
-            'match_all': {}
-        }
-    } == search.Search().source(include=['foo.bar.*']).\
-        source(include=None, exclude=None).to_dict()
+               'query': {
+                   'match_all': {}
+               }
+           } == search.Search().source(include=['foo.bar.*']). \
+               source(include=None, exclude=None).to_dict()
+
 
 def test_suggest_accepts_global_text():
     s = search.Search.from_dict({
         "query": {"match_all": {}},
-        "suggest" : {
-            "text" : "the amsterdma meetpu",
-            "my-suggest-1" : {
-                "term" : {"field" : "title"}
+        "suggest": {
+            "text": "the amsterdma meetpu",
+            "my-suggest-1": {
+                "term": {"field": "title"}
             },
-            "my-suggest-2" : {
+            "my-suggest-2": {
                 "text": "other",
-                "term" : {"field" : "body"}
+                "term": {"field": "body"}
             }
         }
     })
 
     assert {
-        'query': {'match_all': {}},
-        'suggest': {
-            'my-suggest-1': {
-                'term': {'field': 'title'},
-                'text': 'the amsterdma meetpu'
-            },
-            'my-suggest-2': {
-                'term': {'field': 'body'},
-                'text': 'other'}
-        }
-    } == s.to_dict()
+               'query': {'match_all': {}},
+               'suggest': {
+                   'my-suggest-1': {
+                       'term': {'field': 'title'},
+                       'text': 'the amsterdma meetpu'
+                   },
+                   'my-suggest-2': {
+                       'term': {'field': 'body'},
+                       'text': 'other'
+                   }
+               }
+           } == s.to_dict()
+
 
 def test_suggest():
     s = search.Search()
     s = s.suggest('my_suggestion', 'pyhton', term={'field': 'title'})
 
     assert {
-        'query': {'match_all': {}},
-        'suggest': {
-            'my_suggestion': {
-                'term': {'field': 'title'},
-                'text': 'pyhton'
-            }
-        }
-    } == s.to_dict()
+               'query': {'match_all': {}},
+               'suggest': {
+                   'my_suggestion': {
+                       'term': {'field': 'title'},
+                       'text': 'pyhton'
+                   }
+               }
+           } == s.to_dict()
+
 
 def test_exclude():
     s = search.Search()
     s = s.exclude('match', title='python')
 
     assert {
-        'query': {
-            'bool': {
-                'filter': [{
-                    'bool': {
-                        'must_not': [{
-                            'match': {
-                                'title': 'python'
-                            }
-                        }]
-                    }
-                }]
-            }
-        }
-    } == s.to_dict()
+               'query': {
+                   'bool': {
+                       'filter': [{
+                           'bool': {
+                               'must_not': [{
+                                   'match': {
+                                       'title': 'python'
+                                   }
+                               }]
+                           }
+                       }]
+                   }
+               }
+           } == s.to_dict()
+
 
 def test_delete_by_query(mock_client):
     s = search.Search(using='mock') \

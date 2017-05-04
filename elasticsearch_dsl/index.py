@@ -1,6 +1,7 @@
 from .connections import connections
-from .search import Search
 from .exceptions import IllegalOperation
+from .search import Search
+
 
 class Index(object):
     def __init__(self, name, using='default'):
@@ -37,9 +38,9 @@ class Index(object):
             setattr(i, attr, getattr(self, attr).copy())
         return i
 
-
     def _get_connection(self):
         return connections.get_connection(self._using)
+
     connection = property(_get_connection)
 
     def mapping(self, mapping):
@@ -78,7 +79,7 @@ class Index(object):
 
         if not doc_type._doc_type.index:
             doc_type._doc_type.index = self._name
-        return doc_type # to use as decorator???
+        return doc_type  # to use as decorator???
 
     def settings(self, **kwargs):
         """
@@ -207,9 +208,9 @@ class Index(object):
                 # proceed, otherwise raise IllegalOperation
                 existing_analysis = self.get_settings()[self._name]['settings']['index'].get('analysis', {})
                 if any(
-                    existing_analysis.get(section, {}).get(k, None) != analysis[section][k]
-                    for section in analysis
-                    for k in analysis[section]
+                                existing_analysis.get(section, {}).get(k, None) != analysis[section][k]
+                                for section in analysis
+                                for k in analysis[section]
                 ):
                     raise IllegalOperation(
                         'You cannot update analysis configuration on an open index, you need to close index %s first.' % self._name)

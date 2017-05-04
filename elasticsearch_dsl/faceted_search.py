@@ -1,13 +1,15 @@
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
+
 from six import iteritems, itervalues, string_types
 
-from .search import Search
 from .aggs import A
-from .utils import AttrDict
-from .response import Response
 from .query import Q
+from .response import Response
+from .search import Search
+from .utils import AttrDict
 
 __all__ = ['FacetedSearch', 'HistogramFacet', 'TermsFacet', 'DateHistogramFacet', 'RangeFacet']
+
 
 class Facet(object):
     """
@@ -113,6 +115,7 @@ class RangeFacet(Facet):
             self._params['field']: limits
         })
 
+
 class HistogramFacet(Facet):
     agg_type = 'histogram'
 
@@ -129,10 +132,10 @@ class DateHistogramFacet(Facet):
     agg_type = 'date_histogram'
 
     DATE_INTERVALS = {
-        'month': lambda d: (d+timedelta(days=32)).replace(day=1),
-        'week': lambda d: d+timedelta(days=7),
-        'day': lambda d: d+timedelta(days=1),
-        'hour': lambda d: d+timedelta(hours=1),
+        'month': lambda d: (d + timedelta(days=32)).replace(day=1),
+        'week': lambda d: d + timedelta(days=7),
+        'day': lambda d: d + timedelta(days=1),
+        'hour': lambda d: d + timedelta(hours=1),
     }
 
     def __init__(self, **kwargs):
@@ -211,7 +214,7 @@ class FacetedSearch(object):
     """
     index = '_all'
     doc_types = ['_all']
-    fields = ('*', )
+    fields = ('*',)
     facets = {}
 
     def __init__(self, query=None, filters={}, sort=()):

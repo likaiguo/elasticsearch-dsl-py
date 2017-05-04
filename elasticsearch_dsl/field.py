@@ -1,12 +1,13 @@
 import collections
-
 from datetime import date, datetime
+
 from dateutil import parser
 from six import itervalues
 from six.moves import map
 
-from .utils import DslBase, ObjectBase, AttrDict, AttrList
 from .exceptions import ValidationException
+from .utils import AttrDict, AttrList, DslBase, ObjectBase
+
 
 def construct_field(name_or_field, **params):
     # {"type": "text", "analyzer": "snowball"}
@@ -32,6 +33,7 @@ def construct_field(name_or_field, **params):
 
     # "text", analyzer="snowball"
     return Field.get_dsl_class(name_or_field)(**params)
+
 
 class Field(DslBase):
     _type_name = 'field'
@@ -88,6 +90,7 @@ class Field(DslBase):
         value['type'] = name
         return value
 
+
 class CustomField(Field):
     name = 'custom'
     _coerce = True
@@ -99,6 +102,7 @@ class CustomField(Field):
         d = super(CustomField, self).to_dict()
         d['type'] = self.builtin_type
         return d
+
 
 class InnerObjectWrapper(ObjectBase):
     def __init__(self, mapping, **kwargs):
@@ -119,6 +123,7 @@ class InnerObject(object):
     def field(self, name, *args, **kwargs):
         self.properties[name] = construct_field(*args, **kwargs)
         return self
+
     # XXX: backwards compatible, will be removed
     property = field
 
@@ -201,6 +206,7 @@ class InnerObject(object):
 class Object(InnerObject, Field):
     name = 'object'
 
+
 class Nested(InnerObject, Field):
     name = 'nested'
 
@@ -208,6 +214,7 @@ class Nested(InnerObject, Field):
         # change the default for Nested fields
         kwargs.setdefault('multi', True)
         super(Nested, self).__init__(*args, **kwargs)
+
 
 class Date(Field):
     name = 'date'
@@ -227,6 +234,7 @@ class Date(Field):
         except Exception as e:
             raise ValidationException('Could not parse date from the value (%r)' % data, e)
 
+
 class String(Field):
     _param_defs = {
         'fields': {'type': 'field', 'hash': True},
@@ -234,6 +242,7 @@ class String(Field):
         'search_analyzer': {'type': 'analyzer'},
     }
     name = 'string'
+
 
 class Text(Field):
     _param_defs = {
@@ -244,12 +253,14 @@ class Text(Field):
     }
     name = 'text'
 
+
 class Keyword(Field):
     _param_defs = {
         'fields': {'type': 'field', 'hash': True},
         'search_analyzer': {'type': 'analyzer'},
     }
     name = 'keyword'
+
 
 class Boolean(Field):
     name = 'boolean'
@@ -266,41 +277,54 @@ class Boolean(Field):
             raise ValidationException("Value required for this field.")
         return data
 
+
 class Float(Field):
     name = 'float'
+
 
 class HalfFloat(Field):
     name = 'half_float'
 
+
 class Double(Field):
     name = 'double'
+
 
 class Byte(Field):
     name = 'byte'
 
+
 class Short(Field):
     name = 'short'
+
 
 class Integer(Field):
     name = 'integer'
 
+
 class Long(Field):
     name = 'long'
+
 
 class Ip(Field):
     name = 'ip'
 
+
 class Attachment(Field):
     name = 'attachment'
+
 
 class GeoPoint(Field):
     name = 'geo_point'
 
+
 class GeoShape(Field):
     name = 'geo_shape'
 
+
 class Completion(Field):
     name = 'completion'
+
 
 class Percolator(Field):
     name = 'percolator'

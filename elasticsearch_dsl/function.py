@@ -2,6 +2,7 @@ import collections
 
 from .utils import DslBase
 
+
 def SF(name_or_sf, **params):
     # {"script_score": {"script": "_score"}, "filter": {}}
     if isinstance(name_or_sf, collections.Mapping):
@@ -39,6 +40,7 @@ def SF(name_or_sf, **params):
     # "script_score", script="_score", filter=Q()
     return ScoreFunction.get_dsl_class(name_or_sf)(**params)
 
+
 class ScoreFunction(DslBase):
     _type_name = 'score_function'
     _type_shortcut = staticmethod(SF)
@@ -57,8 +59,10 @@ class ScoreFunction(DslBase):
                 d[k] = d[self.name].pop(k)
         return d
 
+
 class ScriptScore(ScoreFunction):
     name = 'script_score'
+
 
 class BoostFactor(ScoreFunction):
     name = 'boost_factor'
@@ -71,18 +75,22 @@ class BoostFactor(ScoreFunction):
             del d[self.name]
         return d
 
+
 class RandomScore(ScoreFunction):
     name = 'random_score'
+
 
 class FieldValueFactor(ScoreFunction):
     name = 'field_value_factor'
 
+
 class Linear(ScoreFunction):
     name = 'linear'
+
 
 class Gauss(ScoreFunction):
     name = 'gauss'
 
+
 class Exp(ScoreFunction):
     name = 'exp'
-

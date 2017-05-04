@@ -2,12 +2,13 @@ from __future__ import unicode_literals
 
 import collections
 
-from six import iteritems, add_metaclass
+from six import add_metaclass, iteritems
 from six.moves import map
 
 from .exceptions import UnknownDslObject, ValidationException
 
 SKIP_VALUES = ('', None)
+
 
 def _wrap(val, obj_wrapper=None):
     if isinstance(val, collections.Mapping):
@@ -15,6 +16,7 @@ def _wrap(val, obj_wrapper=None):
     if isinstance(val, list):
         return AttrList(val)
     return val
+
 
 class AttrList(object):
     def __init__(self, l, obj_wrapper=None):
@@ -53,6 +55,7 @@ class AttrList(object):
 
     def __nonzero__(self):
         return bool(self._l_)
+
     __bool__ = __nonzero__
 
     def __getattr__(self, name):
@@ -71,6 +74,7 @@ class AttrDict(object):
     dictionaries. Used to provide a convenient way to access both results and
     nested dsl dicts.
     """
+
     def __init__(self, d):
         # assign the inner dict manually to prevent __setattr__ from firing
         super(AttrDict, self).__setattr__('_d_', d)
@@ -80,6 +84,7 @@ class AttrDict(object):
 
     def __nonzero__(self):
         return bool(self._d_)
+
     __bool__ = __nonzero__
 
     def __dir__(self):
@@ -102,7 +107,7 @@ class AttrDict(object):
         return r
 
     def __getstate__(self):
-        return (self._d_, )
+        return (self._d_,)
 
     def __setstate__(self, state):
         super(AttrDict, self).__setattr__('_d_', state[0])
@@ -157,6 +162,7 @@ class DslMeta(type):
     For typical use see `QueryMeta` and `Query` in `elasticsearch_dsl.query`.
     """
     _types = {}
+
     def __init__(cls, name, bases, attrs):
         super(DslMeta, cls).__init__(name, bases, attrs)
         # skip for DslBase
@@ -248,7 +254,7 @@ class DslBase(object):
                 shortcut = self.__class__.get_dsl_type(pinfo['type'])
                 if pinfo.get('multi'):
                     if not isinstance(value, (tuple, list)):
-                        value = (value, )
+                        value = (value,)
                     value = list(map(shortcut, value))
 
                 # dict(name -> DslBase), make sure we pickup all the objs
@@ -392,6 +398,7 @@ class ObjectBase(AttrDict):
     def full_clean(self):
         self.clean_fields()
         self.clean()
+
 
 def merge(data, new_data):
     if not (isinstance(data, (AttrDict, collections.Mapping))

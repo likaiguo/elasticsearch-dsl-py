@@ -1,8 +1,8 @@
-from elasticsearch import Elasticsearch
+from pytest import raises
 
+from elasticsearch import Elasticsearch
 from elasticsearch_dsl import connections, serializer
 
-from pytest import raises
 
 def test_default_connection_is_returned_by_default():
     c = connections.Connections()
@@ -13,6 +13,7 @@ def test_default_connection_is_returned_by_default():
     c.add_connection('not-default', con2)
 
     assert c.get_connection() is con
+
 
 def test_get_connection_created_connection_if_needed():
     c = connections.Connections()
@@ -26,6 +27,7 @@ def test_get_connection_created_connection_if_needed():
 
     assert [{'host': 'es.com'}] == default.transport.hosts
     assert [{'host': 'localhost'}] == local.transport.hosts
+
 
 def test_configure_preserves_unchanged_connections():
     c = connections.Connections()
@@ -41,6 +43,7 @@ def test_configure_preserves_unchanged_connections():
     assert new_local is local
     assert new_default is not default
 
+
 def test_remove_connection_removes_both_conn_and_conf():
     c = connections.Connections()
 
@@ -55,12 +58,14 @@ def test_remove_connection_removes_both_conn_and_conf():
         c.get_connection('local2')
         c.get_connection('default')
 
+
 def test_create_connection_constructs_client():
     c = connections.Connections()
     c.create_connection('testing', hosts=['es.com'])
 
     con = c.get_connection('testing')
     assert [{'host': 'es.com'}] == con.transport.hosts
+
 
 def test_create_connection_adds_our_serializer():
     c = connections.Connections()

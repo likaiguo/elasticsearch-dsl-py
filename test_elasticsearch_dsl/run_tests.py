@@ -3,6 +3,7 @@ import sys
 
 import pytest
 
+
 def run_all(argv=None):
     # always insert coverage when running tests through setup.py
     if argv is None:
@@ -12,7 +13,6 @@ def run_all(argv=None):
 
     sys.exit(pytest.main(argv))
 
+
 if __name__ == '__main__':
     run_all(sys.argv)
-
-

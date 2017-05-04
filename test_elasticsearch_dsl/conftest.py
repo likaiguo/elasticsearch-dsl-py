@@ -2,15 +2,15 @@
 
 import os
 
-from elasticsearch.helpers.test import get_test_client, SkipTest
-from elasticsearch.helpers import bulk
-
-from pytest import fixture, yield_fixture, skip
 from mock import Mock
+from pytest import fixture, skip, yield_fixture
 
+from elasticsearch.helpers import bulk
+from elasticsearch.helpers.test import SkipTest, get_test_client
 from .test_integration.test_data import DATA, create_git_index
 
 _client_loaded = False
+
 
 @fixture(scope='session')
 def client(request):
@@ -29,10 +29,12 @@ def client(request):
     except SkipTest:
         skip()
 
+
 @yield_fixture
 def write_client(request, client):
     yield client
     client.indices.delete('test-*', ignore=404)
+
 
 @yield_fixture
 def mock_client(request):
@@ -45,6 +47,7 @@ def mock_client(request):
     connections._conn = {}
     connections._kwargs = {}
 
+
 @fixture(scope='session')
 def data_client(request, client):
     # create mappings
@@ -55,85 +58,88 @@ def data_client(request, client):
     request.addfinalizer(lambda: client.indices.delete('git'))
     return client
 
+
 @fixture
 def dummy_response():
     return {
-      "_shards": {
-        "failed": 0,
-        "successful": 10,
-        "total": 10
-      },
-      "hits": {
-        "hits": [
-          {
-            "_index": "test-index",
-            "_type": "company",
-            "_id": "elasticsearch",
-            "_score": 12.0,
+        "_shards": {
+            "failed": 0,
+            "successful": 10,
+            "total": 10
+        },
+        "hits": {
+            "hits": [
+                {
+                    "_index": "test-index",
+                    "_type": "company",
+                    "_id": "elasticsearch",
+                    "_score": 12.0,
 
-            "_source": {
-              "city": "Amsterdam",
-              "name": "Elasticsearch",
-            },
-          },
-          {
-            "_index": "test-index",
-            "_type": "employee",
-            "_id": "42",
-            "_score": 11.123,
-            "_parent": "elasticsearch",
+                    "_source": {
+                        "city": "Amsterdam",
+                        "name": "Elasticsearch",
+                    },
+                },
+                {
+                    "_index": "test-index",
+                    "_type": "employee",
+                    "_id": "42",
+                    "_score": 11.123,
+                    "_parent": "elasticsearch",
 
-            "_source": {
-              "name": {
-                "first": "Shay",
-                "last": "Bannon"
-              },
-              "lang": "java",
-              "twitter": "kimchy",
-            },
-          },
-          {
-            "_index": "test-index",
-            "_type": "employee",
-            "_id": "47",
-            "_score": 1,
-            "_parent": "elasticsearch",
+                    "_source": {
+                        "name": {
+                            "first": "Shay",
+                            "last": "Bannon"
+                        },
+                        "lang": "java",
+                        "twitter": "kimchy",
+                    },
+                },
+                {
+                    "_index": "test-index",
+                    "_type": "employee",
+                    "_id": "47",
+                    "_score": 1,
+                    "_parent": "elasticsearch",
 
-            "_source": {
-              "name": {
-                "first": "Honza",
-                "last": "Král"
-              },
-              "lang": "python",
-              "twitter": "honzakral",
-            },
-          },
-          {
-            "_index": "test-index",
-            "_type": "employee",
-            "_id": "53",
-            "_score": 16.0,
-            "_parent": "elasticsearch",
-          },
-        ],
-        "max_score": 12.0,
-        "total": 123
-      },
-      "timed_out": False,
-      "took": 123
+                    "_source": {
+                        "name": {
+                            "first": "Honza",
+                            "last": "Král"
+                        },
+                        "lang": "python",
+                        "twitter": "honzakral",
+                    },
+                },
+                {
+                    "_index": "test-index",
+                    "_type": "employee",
+                    "_id": "53",
+                    "_score": 16.0,
+                    "_parent": "elasticsearch",
+                },
+            ],
+            "max_score": 12.0,
+            "total": 123
+        },
+        "timed_out": False,
+        "took": 123
     }
+
 
 @fixture
 def aggs_search():
     from elasticsearch_dsl import Search
     s = Search(index='git', doc_type='commits')
-    s.aggs\
-        .bucket('popular_files', 'terms', field='files', size=2)\
-        .metric('line_stats', 'stats', field='stats.lines')\
+    s.aggs \
+        .bucket('popular_files', 'terms', field='files', size=2) \
+        .metric('line_stats', 'stats', field='stats.lines') \
         .metric('top_commits', 'top_hits', size=2, _source=["stats.*", "committed_date"])
     s.aggs.bucket('per_month', 'date_histogram', interval='month', field='info.committed_date')
     s.aggs.metric('sum_lines', 'sum', field='stats.lines')
     return s
+
 
 @fixture
 def aggs_data():

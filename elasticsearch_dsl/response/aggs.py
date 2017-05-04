@@ -1,5 +1,6 @@
+from . import AggResponse, Response
 from ..utils import AttrDict, AttrList
-from . import Response, AggResponse
+
 
 def _resolve_field(search, field):
     for dt in search._doc_type_map.values():
@@ -7,14 +8,17 @@ def _resolve_field(search, field):
         if f:
             return f
 
+
 class Bucket(AggResponse):
     def __init__(self, aggs, search, data, field=None):
         if field:
             data['key'] = field.deserialize(data['key'])
         super(Bucket, self).__init__(aggs, search, data)
 
+
 class BucketData(AggResponse):
     _bucket_class = Bucket
+
     def _wrap_bucket(self, data):
         return self._bucket_class(self._meta['aggs'], self._meta['search'],
                                   data, field=self._meta.get('field'))
@@ -43,6 +47,7 @@ class BucketData(AggResponse):
                 bs = AttrDict(dict((k, self._wrap_bucket(bs[k])) for k in bs))
             super(AttrDict, self).__setattr__('_buckets', bs)
         return self._buckets
+
 
 class TopHitsData(Response):
     def __init__(self, agg, search, data):

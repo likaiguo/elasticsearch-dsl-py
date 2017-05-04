@@ -1,16 +1,16 @@
-import copy
 import collections
+import copy
 
 from six import iteritems, string_types
 
-from elasticsearch.helpers import scan
 from elasticsearch.exceptions import TransportError
-
-from .query import Q, EMPTY_QUERY, Bool
+from elasticsearch.helpers import scan
 from .aggs import A, AggBase
-from .utils import DslBase, AttrDict
-from .response import Response, Hit, SuggestResponse
 from .connections import connections
+from .query import Bool, EMPTY_QUERY, Q
+from .response import Hit, Response, SuggestResponse
+from .utils import AttrDict, DslBase
+
 
 class QueryProxy(object):
     """
@@ -18,6 +18,7 @@ class QueryProxy(object):
     (to add query/post_filter) and also allows attribute access which is proxied to
     the wrapped query.
     """
+
     def __init__(self, search, attr_name):
         self._search = search
         self._proxied = EMPTY_QUERY
@@ -25,6 +26,7 @@ class QueryProxy(object):
 
     def __nonzero__(self):
         return self._proxied != EMPTY_QUERY
+
     __bool__ = __nonzero__
 
     def __call__(self, *args, **kwargs):
@@ -58,6 +60,7 @@ class ProxyDescriptor(object):
         s.query = Q(...)
 
     """
+
     def __init__(self, name):
         self._attr_name = '_%s_proxy' % name
 
@@ -71,12 +74,14 @@ class ProxyDescriptor(object):
 
 class AggsProxy(AggBase, DslBase):
     name = 'aggs'
+
     def __init__(self, search):
         self._base = self._search = search
         self._params = {'aggs': {}}
 
     def to_dict(self):
         return super(AggsProxy, self).to_dict().get('aggs', {})
+
 
 class Request(object):
     def __init__(self, using='default', index=None, doc_type=None, extra=None):
@@ -640,7 +645,7 @@ class Search(Request):
                 index=self._index,
                 doc_type=self._doc_type,
                 **self._params
-            ):
+        ):
             callback = self._doc_type_map.get(hit['_type'], Hit)
             callback = getattr(callback, 'from_es', callback)
             yield callback(hit)
@@ -662,12 +667,12 @@ class Search(Request):
         )
 
 
-
 class MultiSearch(Request):
     """
     Combine multiple :class:`~elasticsearch_dsl.Search` objects into a single
     request.
     """
+
     def __init__(self, **kwargs):
         super(MultiSearch, self).__init__(**kwargs)
         self._searches = []

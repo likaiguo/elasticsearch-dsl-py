@@ -1,16 +1,16 @@
 import collections
 import re
 
-from elasticsearch.exceptions import NotFoundError, RequestError
-from six import iteritems, add_metaclass
+from six import add_metaclass, iteritems
 
+from elasticsearch.exceptions import NotFoundError, RequestError
+from .connections import connections
+from .exceptions import IllegalOperation, ValidationException
 from .field import Field
 from .mapping import Mapping
-from .utils import ObjectBase, AttrDict, merge
 from .response import HitMeta
 from .search import Search
-from .connections import connections
-from .exceptions import ValidationException, IllegalOperation
+from .utils import AttrDict, ObjectBase, merge
 
 DELETE_META_FIELDS = frozenset((
     'id', 'parent', 'routing', 'version', 'version_type'
@@ -25,15 +25,18 @@ META_FIELDS = frozenset((
     'index', 'using', 'score',
 )).union(DOC_META_FIELDS)
 
+
 class MetaField(object):
     def __init__(self, *args, **kwargs):
         self.args, self.kwargs = args, kwargs
+
 
 class DocTypeMeta(type):
     def __new__(cls, name, bases, attrs):
         # DocTypeMeta filters attrs in place
         attrs['_doc_type'] = DocTypeOptions(name, bases, attrs)
         return super(DocTypeMeta, cls).__new__(cls, name, bases, attrs)
+
 
 class DocTypeOptions(object):
     def __init__(self, name, bases, attrs):
@@ -48,7 +51,7 @@ class DocTypeOptions(object):
         # get doc_type name, if not defined take the name of the class and
         # transform it to lower_case
         doc_type = getattr(meta, 'doc_type',
-                re.sub(r'(.)([A-Z])', r'\1_\2', name).lower())
+                           re.sub(r'(.)([A-Z])', r'\1_\2', name).lower())
 
         # create the mapping instance
         self.mapping = getattr(meta, 'mapping', Mapping(doc_type))
@@ -102,6 +105,7 @@ class DocType(ObjectBase):
     """
     Model-like class for persisting documents in elasticsearch.
     """
+
     def __init__(self, meta=None, **kwargs):
         meta = meta or {}
         for k in list(kwargs):
@@ -274,6 +278,7 @@ class DocType(ObjectBase):
 
     def _get_connection(self, using=None):
         return connections.get_connection(using or self._doc_type.using)
+
     connection = property(_get_connection)
 
     def _get_index(self, index=None):

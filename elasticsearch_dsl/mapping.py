@@ -1,18 +1,18 @@
 import collections
-
-from six import iteritems
 from itertools import chain
 
-from .utils import DslBase
-from .field import InnerObject, Text
+from six import iteritems
+
 from .connections import connections
-from .exceptions import IllegalOperation
+from .field import InnerObject, Text
 from .index import Index
+from .utils import DslBase
 
 META_FIELDS = frozenset((
     'dynamic', 'transform', 'dynamic_date_formats', 'date_detection',
     'numeric_detection', 'dynamic_templates', 'enabled'
 ))
+
 
 class Properties(InnerObject, DslBase):
     def __init__(self, name):

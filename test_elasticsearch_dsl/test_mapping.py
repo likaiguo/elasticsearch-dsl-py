@@ -1,6 +1,6 @@
 import json
 
-from elasticsearch_dsl import mapping, Text, Keyword, Nested, analysis
+from elasticsearch_dsl import Keyword, Nested, Text, analysis, mapping
 
 
 def test_mapping_can_has_fields():
@@ -8,13 +8,14 @@ def test_mapping_can_has_fields():
     m.field('name', 'text').field('tags', 'keyword')
 
     assert {
-        'article': {
-            'properties': {
-                'name': {'type': 'text'},
-                'tags': {'type': 'keyword'}
-            }
-        }
-    } == m.to_dict()
+               'article': {
+                   'properties': {
+                       'name': {'type': 'text'},
+                       'tags': {'type': 'keyword'}
+                   }
+               }
+           } == m.to_dict()
+
 
 def test_mapping_update_is_recursive():
     m1 = mapping.Mapping('article')
@@ -35,72 +36,75 @@ def test_mapping_update_is_recursive():
     m1.update(m2, update_only=True)
 
     assert {
-        'article': {
-            '_all': {'enabled': False},
-            '_analyzer': {'path': 'lang'},
-            'dynamic': False,
-            'properties': {
-                'published_from': {'type': 'date'},
-                'title': {'type': 'text'},
-                'lang': {'type': 'keyword'},
-                'author': {
-                    'type': 'object',
-                    'properties': {
-                        'name': {'type': 'text'},
-                        'email': {'type': 'text'},
-                    }
-                }
-            }
-        }
-    } == m1.to_dict()
+               'article': {
+                   '_all': {'enabled': False},
+                   '_analyzer': {'path': 'lang'},
+                   'dynamic': False,
+                   'properties': {
+                       'published_from': {'type': 'date'},
+                       'title': {'type': 'text'},
+                       'lang': {'type': 'keyword'},
+                       'author': {
+                           'type': 'object',
+                           'properties': {
+                               'name': {'type': 'text'},
+                               'email': {'type': 'text'},
+                           }
+                       }
+                   }
+               }
+           } == m1.to_dict()
+
 
 def test_properties_can_iterate_over_all_the_fields():
     m = mapping.Mapping('testing')
     m.field('f1', 'text', test_attr='f1', fields={'f2': Keyword(test_attr='f2')})
     m.field('f3', Nested(test_attr='f3', properties={
-            'f4': Text(test_attr='f4')}))
+        'f4': Text(test_attr='f4')
+    }))
 
     assert set(('f1', 'f2', 'f3', 'f4')) == set(f.test_attr for f in m.properties._collect_fields())
 
+
 def test_mapping_can_collect_all_analyzers():
     a1 = analysis.analyzer('my_analyzer1',
-        tokenizer='keyword',
-        filter=['lowercase', analysis.token_filter('my_filter1', 'stop', stopwords=['a', 'b'])],
-    )
+                           tokenizer='keyword',
+                           filter=['lowercase', analysis.token_filter('my_filter1', 'stop', stopwords=['a', 'b'])],
+                           )
     a2 = analysis.analyzer('english')
     a3 = analysis.analyzer('unknown_custom')
     a4 = analysis.analyzer('my_analyzer2',
-        tokenizer=analysis.tokenizer('trigram', 'nGram', min_gram=3, max_gram=3),
-        filter=[analysis.token_filter('my_filter2', 'stop', stopwords=['c', 'd'])],
-    )
+                           tokenizer=analysis.tokenizer('trigram', 'nGram', min_gram=3, max_gram=3),
+                           filter=[analysis.token_filter('my_filter2', 'stop', stopwords=['c', 'd'])],
+                           )
     a5 = analysis.analyzer('my_analyzer3', tokenizer='keyword')
 
     m = mapping.Mapping('article')
     m.field('title', 'text', analyzer=a1,
-        fields={
-            'english': Text(analyzer=a2),
-            'unknown': Keyword(search_analyzer=a3),
-        }
-    )
+            fields={
+                'english': Text(analyzer=a2),
+                'unknown': Keyword(search_analyzer=a3),
+            }
+            )
     m.field('comments', Nested(properties={
         'author': Text(analyzer=a4)
     }))
     m.meta('_all', analyzer=a5)
 
     assert {
-        'analyzer': {
-            'my_analyzer1': {'filter': ['lowercase', 'my_filter1'], 'tokenizer': 'keyword', 'type': 'custom'},
-            'my_analyzer2': {'filter': ['my_filter2'], 'tokenizer': 'trigram', 'type': 'custom'},
-            'my_analyzer3': {'tokenizer': 'keyword', 'type': 'custom'},
-        },
-        'filter': {
-            'my_filter1': {'stopwords': ['a', 'b'], 'type': 'stop'},
-            'my_filter2': {'stopwords': ['c', 'd'], 'type': 'stop'},
-        },
-        'tokenizer': {
-            'trigram': {'max_gram': 3, 'min_gram': 3, 'type': 'nGram'},
-        }
-    } == m._collect_analysis()
+               'analyzer': {
+                   'my_analyzer1': {'filter': ['lowercase', 'my_filter1'], 'tokenizer': 'keyword', 'type': 'custom'},
+                   'my_analyzer2': {'filter': ['my_filter2'], 'tokenizer': 'trigram', 'type': 'custom'},
+                   'my_analyzer3': {'tokenizer': 'keyword', 'type': 'custom'},
+               },
+               'filter': {
+                   'my_filter1': {'stopwords': ['a', 'b'], 'type': 'stop'},
+                   'my_filter2': {'stopwords': ['c', 'd'], 'type': 'stop'},
+               },
+               'tokenizer': {
+                   'trigram': {'max_gram': 3, 'min_gram': 3, 'type': 'nGram'},
+               }
+           } == m._collect_analysis()
 
     assert json.loads(json.dumps(m.to_dict())) == m.to_dict()
 
@@ -126,18 +130,25 @@ def test_mapping_can_collect_multiple_analyzers():
         }
     )
     assert {
-       'analyzer': {
-           'my_analyzer1': {'filter': ['lowercase', 'my_filter1'],
-                            'tokenizer': 'keyword',
-                            'type': 'custom'},
-           'my_analyzer2': {'filter': ['my_filter2'],
-                            'tokenizer': 'trigram',
-                            'type': 'custom'}},
-       'filter': {
-           'my_filter1': {'stopwords': ['a', 'b'], 'type': 'stop'},
-           'my_filter2': {'stopwords': ['c', 'd'], 'type': 'stop'}},
-       'tokenizer': {'trigram': {'max_gram': 3, 'min_gram': 3, 'type': 'nGram'}}
-    } == m._collect_analysis()
+               'analyzer': {
+                   'my_analyzer1': {
+                       'filter': ['lowercase', 'my_filter1'],
+                       'tokenizer': 'keyword',
+                       'type': 'custom'
+                   },
+                   'my_analyzer2': {
+                       'filter': ['my_filter2'],
+                       'tokenizer': 'trigram',
+                       'type': 'custom'
+                   }
+               },
+               'filter': {
+                   'my_filter1': {'stopwords': ['a', 'b'], 'type': 'stop'},
+                   'my_filter2': {'stopwords': ['c', 'd'], 'type': 'stop'}
+               },
+               'tokenizer': {'trigram': {'max_gram': 3, 'min_gram': 3, 'type': 'nGram'}}
+           } == m._collect_analysis()
+
 
 def test_even_non_custom_analyzers_can_have_params():
     a1 = analysis.analyzer('whitespace', type='pattern', pattern=r'\\s+')
@@ -145,13 +156,14 @@ def test_even_non_custom_analyzers_can_have_params():
     m.field('title', 'text', analyzer=a1)
 
     assert {
-        "analyzer": {
-            "whitespace": {
-                "type": "pattern",
-                "pattern": r"\\s+"
-            }
-            }
-    } == m._collect_analysis()
+               "analyzer": {
+                   "whitespace": {
+                       "type": "pattern",
+                       "pattern": r"\\s+"
+                   }
+               }
+           } == m._collect_analysis()
+
 
 def test_resolve_field_can_resolve_multifields():
     m = mapping.Mapping('m')
