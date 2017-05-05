@@ -44,6 +44,7 @@ class Field(DslBase):
     def __init__(self, *args, **kwargs):
         self._multi = kwargs.pop('multi', False)
         self._required = kwargs.pop('required', False)
+        kwargs.pop('verbose_name', None)
         super(Field, self).__init__(*args, **kwargs)
 
     def __getitem__(self, subfield):
